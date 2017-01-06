@@ -62,7 +62,21 @@
       }
     },
     mouseHover = ('onmouseleave' in document) ? [ 'mouseenter', 'mouseleave'] : [ 'mouseover', 'mouseout' ],
-    tipPositions = /\b(top|bottom|left|top)+/;
+    tipPositions = /\b(top|bottom|left|top)+/,
+    /**
+     * Bootstrap custom event
+     *
+     * Helper to fire a custom event following bootstrap convention
+     *
+     * @this   {HTMLelement} E.g. a modal element
+     * @param  {String} eventName     E.g. `shown`
+     * @param  {String} componentName E.g. `modal`
+     */
+    bootstrapCustomEvent = function (eventName, componentName) {
+      if (('CustomEvent' in window) && window.dispatchEvent) {
+        this.dispatchEvent(new CustomEvent(eventName + '.bs.' + componentName));
+      }
+    };
   
   // Native Javascript for Bootstrap 3 | Affix
   // by dnp_theme
@@ -227,12 +241,11 @@
     this.btn = typeof element === 'object' ? element : document.querySelector(element);
     this.option = typeof option === 'string' ? option : null;
   
-    var self = this,
-      changeEvent = (('CustomEvent' in window) && window.dispatchEvent)
-        ? new CustomEvent('bs.button.change') : null; // The custom event that will be triggered on demand
+    var self = this;
   
     // assign event to a trigger function
-    function triggerChange(t) { if (changeEvent) { t.dispatchEvent(changeEvent); } }
+    // The custom event that will be triggered on demand
+    function triggerChange(t) { bootstrapCustomEvent.call(t, 'change', 'button'); }
   
     this.setState = function() {
       if ( this.option === 'loading' ) {
@@ -403,12 +416,7 @@
       var dr = direction === 'left' ? 'next' : 'prev';
       var slid = null, slide = null;
   
-      //register events
-      if (('CustomEvent' in window) && window.dispatchEvent) {
-        slid =  new CustomEvent("slid.bs.carousel");
-        slide = new CustomEvent("slide.bs.carousel");
-      }
-      if (slide) { this.carousel.dispatchEvent(slide); } //here we go with the slide
+      bootstrapCustomEvent.call(this.carousel, 'slide', 'carousel'); //here we go with the slide
   
       this._removeEventListeners();
       clearInterval(timer);
@@ -434,7 +442,7 @@
           if ( self.options.interval !== false && !/\bpaused/.test(self.carousel.className) ){
             clearInterval(timer); self.cycle();
           }
-          if (slid) { self.carousel.dispatchEvent(slid); } //here we go with the slid
+          bootstrapCustomEvent.call(self.carousel, 'slid', 'carousel'); //here we go with the slid
         }, this.options.duration + 100 );
       } else {
         addClass(this.slides[next],'active');
@@ -445,7 +453,7 @@
           if ( self.options.interval !== false && !/\bpaused/.test(self.carousel.className) ){
             clearInterval(timer); self.cycle();
           }
-          if (slid) { self.carousel.dispatchEvent(slid); } //here we go with the slid
+          bootstrapCustomEvent.call(self.carousel, 'slid', 'carousel'); //here we go with the slid
         }, this.options.duration + 100 );
       }
     };
@@ -819,6 +827,8 @@
         addClass(document.body,'modal-open');
         addClass(self.modal,'in');
         self.modal.setAttribute('aria-hidden', false);
+  
+        bootstrapCustomEvent.call(self.modal, 'shown', 'modal');
       }, this.options.duration/2);
     };
     this.close = function() {
@@ -839,6 +849,8 @@
         self.dismiss();
         self.keydown();
         self.modal.style.display = '';
+  
+        bootstrapCustomEvent.call(self.modal, 'hidden', 'modal');
       }, this.options.duration/2);
   
       setTimeout( function() {
